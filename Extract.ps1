@@ -60,26 +60,18 @@ Catch
 }
 #endregion
 
-#region Copy PatchingList sheet from MPL to Temp_$Batch.xlsx
-Write-Host "Copying PatchingList sheet from MPL to Temp_$Batch.xlsx : " -NoNewline
-Start-Sleep 2
-Try
-{
-	Copy-ExcelWorkSheet -SourceWorkbook "$ScriptDir\MasterPatchingList_v0.9.xlsx" -sourceWorksheet "PatchingList" -DestinationWorkbook "$ScriptDir\Temp_$Batch.xlsx" -DestinationWorksheet "Overwritten" -ErrorAction Stop
-	Write-Host "Done" -ForegroundColor Green
-}
-
-Catch
-{
-	Write-Warning ($_)
-	Continue
-}
-
-Finally
-{
-	$Error.Clear()
-}
-
+#region Convert MPL to CSV
+$oleDbConn = New-Object System.Data.OleDb.OleDbConnection
+$oleDbCmd = New-Object System.Data.OleDb.OleDbCommand
+$oleDbAdapter = New-Object System.Data.OleDb.OleDbDataAdapter
+$dataTable = New-Object System.Data.DataTable
+$oleDbConn.ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source='$ScriptDir\MasterPatchingList_v0.9.xlsx';Extended Properties=Excel 16.0;Persist Security Info=False"
+$oleDbConn.Open()
+$oleDbCmd.Connection = $OleDbConn
+$oleDbCmd.commandtext = "Select * from [Sheet1$]"
+$oleDbAdapter.SelectCommand = $OleDbCmd
+$ret = $oleDbAdapter.Fill($dataTable)
+Write-Host	"Rows returned:$ret" -ForegroundColor green
+$dataTable | Export-Csv "$ScriptDir\Temp.csv" -Delimiter ';'
+$oleDbConn.Close()
 #endregion
-
-Pause
